@@ -1,0 +1,12 @@
+# remove all pycache files
+*.pyc
+__pycache__/
+
+#ignore Data
+Data/
+Data_Loss
+Annotations_final.csv
+Delais_video_tracking.csv
+Sub_10_annotations.csv
+test.csv
+subject_info_modified.npy
