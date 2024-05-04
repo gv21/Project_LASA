@@ -52,7 +52,7 @@ def pd_2_numpy_and_segment(pd_frame, dict):
         tmp[:,0] = t[mask]
         tmp[:,1] = x[mask]
         tmp[:,2] = y[mask]
-        tmp[:,3] = z[mask] 
+        tmp[:,3] = z[mask]  
         tmp[:,4] = q_w[mask]
         tmp[:,5] = q_x[mask]
         tmp[:,6] = q_y[mask]
@@ -108,7 +108,6 @@ def get_data_loss(subject_id, segment, data, tool_name):
     tmp[1] = np_mat_raw.shape[0]
     #np.save(f"Data_Loss/S_{subject_id}_{tool_name}_{segment+1}", tmp)
     return tmp[0]
-
 
 
 def plot_clustered_data_3D_g2(subject_id, tool_name, segment_id, cluster_info, data, ax, cluster_color):
@@ -192,3 +191,41 @@ def get_list_segments_with_clusters_DBSCAN(subject_id, tool_name, data, clusters
         plt.close(fig)
 
     return list_segments_clusters, list_segments_clusters_info
+
+#Manual segmentation functions
+def select_points_manually2(df_manual, df_data, delta_video_tracking=[0,0,0]):
+    df_manual['Nbr_selection'] = 1 #video 1
+    df_manual.loc[df_manual['Start_event_s'] > 962, ['Nbr_selection']] = 2 #video 2
+    df_manual.loc[df_manual['Start_event_s'] > 1924, ['Nbr_selection']] = 3 #video 3
+
+    nbr_video = len(df_manual['Nbr_selection'].unique())
+    df_manual['Start_event_s2'] = df_manual['Start_event_s']
+    df_manual['End_event_s2'] = df_manual['End_event_s']
+    for i in range(nbr_video):
+        df_manual.loc[df_manual['Nbr_selection'] == (i+1), ['Start_event_s2', 'End_event_s2']] += delta_video_tracking[i]
+        
+    intervals = list(zip(df_manual['Start_event_s2'], df_manual['End_event_s2']))
+    
+    condition = "|".join([f"(`Time (Seconds)` > {debut} & `Time (Seconds)` < {fin})" for (debut, fin) in intervals])
+    
+    df_filtered = df_data.query(f"not ({condition})")
+    return df_filtered
+
+def adjust_time_on_nbr_videos(df):
+    if (len(df['Video_nbr'].unique())>1):
+        df['Start_event'] = df['Start_event'].astype(float)
+        df['End_event'] = df['End_event'].astype(float)
+
+        df.loc[df['Video_nbr'] == 2, ['Start_event', 'End_event']] += 16.02
+        df.loc[df['Video_nbr'] == 3, ['Start_event', 'End_event']] += 32.04
+        return df.round(3)
+    else: return df
+
+def convert_to_seconds2(time):
+    minutes = int(time)
+    decimal = round(time-minutes,3)
+    decimal_100 = decimal*100
+    seconds = int(decimal_100)
+    ms = decimal_100 - seconds
+    total_seconds = minutes * 60 + seconds + ms
+    return total_seconds

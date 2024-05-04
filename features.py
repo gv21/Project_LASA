@@ -4,7 +4,7 @@ import numpy as np
 #Soheil's features
 def get_path_length(data):
     # Calculate the differences in positions between consecutive samples
-    differences = np.diff(data[:, 1:4], axis=0)
+    differences = np.diff(data, axis=0)
     # Calculate the Euclidean distance (path length) between consecutive points
     distances = np.linalg.norm(differences, axis=1)
     # Sum up the distances to get the total path length
@@ -23,8 +23,8 @@ def get_economy_of_volume(position, path_length):
     return 100.0 * ((MV ** (1/3)) / path_length)
 
 def get_jerk(t, d1_position, d2_position, d3_position):
-    norm_d1_position = np.linalg.norm(d1_position, axis=1)
-    norm_d3_position = np.linalg.norm(d3_position, axis=1)
+    norm_d1_position = np.linalg.norm(d1_position, axis=1) #d1_position = v (x,y,z)
+    norm_d3_position = np.linalg.norm(d3_position, axis=1) #d3_position = jerk (x,y,z)
 
     norm_d1_position_max = np.max(norm_d1_position)
     frequency = 120.0
