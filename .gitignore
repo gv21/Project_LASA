@@ -5,6 +5,7 @@ __pycache__/
 #ignore Data
 Data/
 Data_Loss
+Step1_Auto_position_plots
 Annotations_final.csv
 Delais_video_tracking.csv
 Sub_10_annotations.csv

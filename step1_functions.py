@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 def compute_velocity(x_t0, x_t1, t0, t1):
     velocity = (x_t1 - x_t0)/(t1-t0)
@@ -99,16 +100,17 @@ def compute_pairs_time(time_start_pic_max, time_end_pic_min, delta_t=60):
             closest_end_time = later_than_start[(later_than_start-start).argmin()]
             if ((closest_end_time-start)<delta_t): 
                 pairs.append([start-0.5, closest_end_time+0.5])
-    return pairs  
+    return pairs 
 
-def remove_extreme_using_v_time(selected_data, pairs_t):
+def remove_extreme(selected_data, pairs_t):
     """Return a mask of values to keep ie values that are not in the interval where velocity reaches extreme values"""
     mask = np.ones(len(selected_data), dtype=bool) 
     for t_start, t_end in pairs_t:
         mask &= (selected_data['Time (Seconds)'] < (t_start)) | (selected_data['Time (Seconds)'] > (t_end ))
     return mask
 
-def adjust_time_pair(data, pairs, median_x, time_allowed = 3):
+def adjust_time_pair(data, pairs, median_x, time_allowed = 5): #before 3s
+    #adjust time so that it corresponds when the position is close to the median = ref point of the task
     new_pairs = []
     for start, end in pairs:
         interval_min = start - time_allowed/2
@@ -136,7 +138,7 @@ def adjust_time_pair(data, pairs, median_x, time_allowed = 3):
         new_pairs.append([new_start, new_end])
     return new_pairs
 
-def compute_event_time_x_pos(segments_time_i, selected_data_nh, selected_data_tw, mask_x_nh, mask_x_tw):
+def compute_event_time_pos(segments_time_i, selected_data_nh, selected_data_tw, mask_x_nh, mask_x_tw):
     start_t_task = segments_time_i['1'][0] #beginning of first stitch
     end_t_task = segments_time_i['8'][1] #end of last stitch
 
@@ -169,3 +171,162 @@ def compute_event_time_x_pos(segments_time_i, selected_data_nh, selected_data_tw
     time_end_pic_min_tw = [x for x in time_end_pic_min_tw_ if ((x >= start_t_task) & (x <= end_t_task))]
 
     return [time_start_pic_max_nh, time_end_pic_min_nh], [time_start_pic_max_tw, time_end_pic_min_tw]
+
+#function to put a threshold on Z axis using the already x-selected signal
+def remove_extreme_using_z_pos(nh_selected, tw_selected, medians_nh, medians_tw):
+    """Create a mask keeping all points which are between two extreme values"""
+    median_nh_z = medians_nh['Z.1']
+    median_tw_z = medians_tw['Z.1']
+    std_z_nh = nh_selected['Z.1'].std()
+    std_z_tw = tw_selected['Z.1'].std()
+
+    #A deviation from the main task (median) of 0.02m is considered as reasonable
+    nh_threshold_z_min= median_nh_z - max(0.02, std_z_nh)
+    nh_threshold_z_max= median_nh_z + max(0.02, std_z_nh)
+    tw_threshold_z_min= median_tw_z - max(0.02, std_z_tw)
+    tw_threshold_z_max= median_tw_z + max(0.02, std_z_tw)
+
+    mask_selected_nh = (nh_selected['Z.1']<nh_threshold_z_max) & (nh_selected['Z.1']>nh_threshold_z_min)
+    mask_selected_tw = (tw_selected['Z.1']<tw_threshold_z_max) & (tw_selected['Z.1']>tw_threshold_z_min)
+
+    return mask_selected_nh, mask_selected_tw
+
+#function to put a threshold on Z axis using the already x-selected signal
+def remove_extreme_using_z_pos2(nh_rec, tw_rec, stds_nh, stds_tw, medians_nh, medians_tw):
+    """Create a mask keeping all points which are between two extreme values"""
+    median_nh_z = medians_nh['Z.1']
+    median_tw_z = medians_tw['Z.1']
+    std_z_nh = stds_nh['Z.1']
+    std_z_tw = stds_tw['Z.1']
+
+    #A deviation from the main task (median) of 0.02m is considered as reasonable
+    nh_threshold_z_min= median_nh_z - max(0.02, std_z_nh)
+    nh_threshold_z_max= median_nh_z + max(0.02, std_z_nh)
+    tw_threshold_z_min= median_tw_z - max(0.02, std_z_tw)
+    tw_threshold_z_max= median_tw_z + max(0.02, std_z_tw)
+
+    mask_selected_nh = (nh_rec['Z.1']<nh_threshold_z_max) & (nh_rec['Z.1']>nh_threshold_z_min)
+    mask_selected_tw = (tw_rec['Z.1']<tw_threshold_z_max) & (tw_rec['Z.1']>tw_threshold_z_min)
+
+    return mask_selected_nh, mask_selected_tw
+
+#function to put a threshold on Y axis using the already x-selected signal
+def remove_extreme_using_y_pos(nh_rec, tw_rec, stds_nh, stds_tw, medians_nh, medians_tw):
+    """Create a mask keeping all points which are between two extreme values"""
+    median_nh_y = medians_nh['Y.1']
+    median_tw_y = medians_tw['Y.1']
+    std_y_nh = stds_nh['Y.1']
+    std_y_tw = stds_tw['Y.1']
+
+    #A deviation from the main task (median) of 0.015m is considered as reasonable
+    nh_threshold_y_min= median_nh_y - max(0.015, std_y_nh)
+    nh_threshold_y_max= median_nh_y + max(0.015, std_y_nh)
+    tw_threshold_y_min= median_tw_y - max(0.015, std_y_tw)
+    tw_threshold_y_max= median_tw_y + max(0.015, std_y_tw)
+
+    mask_selected_nh = (nh_rec['Y.1']<nh_threshold_y_max) & (nh_rec['Y.1']>nh_threshold_y_min)
+    mask_selected_tw = (tw_rec['Y.1']<tw_threshold_y_max) & (tw_rec['Y.1']>tw_threshold_y_min)
+
+    return mask_selected_nh, mask_selected_tw
+
+#function to put a threshold on Y axis using the already x-selected signal
+def remove_extreme_using_x_pos_on_selected_data(nh_rec, tw_rec, stds_nh, stds_tw, medians_nh, medians_tw):
+    """Create a mask keeping all points which are between two extreme values"""
+    median_nh_x = medians_nh['X.1']
+    median_tw_x = medians_tw['X.1']
+    std_x_nh = stds_nh['X.1']
+    std_x_tw = stds_tw['X.1']
+
+    #A deviation from the main task (median) of 0.015m is considered as reasonable. Being far away than 0.04m is considered as not reasonable
+    nh_threshold_x_min= median_nh_x - min(0.04, max(0.015, std_x_nh))
+    nh_threshold_x_max= median_nh_x + min(0.04, max(0.015, std_x_nh))
+    tw_threshold_x_min= median_tw_x - min(0.04, max(0.015, std_x_tw))
+    tw_threshold_x_max= median_tw_x + min(0.04, max(0.015, std_x_tw))
+
+    mask_selected_nh = (nh_rec['X.1']<nh_threshold_x_max) & (nh_rec['X.1']>nh_threshold_x_min)
+    mask_selected_tw = (tw_rec['X.1']<tw_threshold_x_max) & (tw_rec['X.1']>tw_threshold_x_min)
+
+    return mask_selected_nh, mask_selected_tw
+
+#observed that sub 1 moved in term of x direction during the task, the median considered did not make a lot of sense for a precise selection
+#of the points, then we consider here intervals of 200s and computed the median on the initial reconstructed data and the std based on the
+#selected data (where we have already excluded events when the tool is reaching the glass)
+def remove_extreme_using_x_pos_on_selected_data_sub1(nh_rec, tw_rec, nh_selected_without_glass_event, tw_selected_without_glass_event):
+    """Create a mask keeping all points which are between two extreme values"""
+    interval = 90*120 #interval of 200s to consider
+    intervals = nh_rec['Time (Seconds)'][::interval] #same number of interval for nh and tw
+
+    mask_nh = []
+    mask_tw = []
+    size_nh = 0
+    for n in range (len(intervals.values)):
+        if (n==(len(intervals.values)-1)):
+            nh_rec_interval= nh_rec.loc[intervals.index[n]:]
+            tw_rec_interval= tw_rec.loc[intervals.index[n]:]
+            nh_selected_without_glass_event_interval = nh_selected_without_glass_event.loc[intervals.index[n]:]
+            tw_selected_without_glass_event_interval = tw_selected_without_glass_event.loc[intervals.index[n]:]
+       
+        else:
+            nh_rec_interval = nh_rec.loc[intervals.index[n]:intervals.index[n+1]]
+            tw_rec_interval = tw_rec.loc[intervals.index[n]:intervals.index[n+1]]
+            nh_selected_without_glass_event_interval = nh_selected_without_glass_event.loc[intervals.index[n]:intervals.index[n+1]]
+            tw_selected_without_glass_event_interval = tw_selected_without_glass_event.loc[intervals.index[n]:intervals.index[n+1]]
+       
+        median_initial_nh = nh_rec_interval['X.1'].median()
+        std_without_glass_event_nh = nh_selected_without_glass_event_interval['X.1'].std()
+        if np.isnan(median_initial_nh):
+            median_initial_nh = 0
+        if np.isnan(std_without_glass_event_nh):
+            std_without_glass_event_nh = 0
+        nh_threshold_x_min= median_initial_nh - max(0.02, std_without_glass_event_nh)
+        nh_threshold_x_max= median_initial_nh + max(0.02, std_without_glass_event_nh)
+
+        mask_selected_nh = ((nh_rec_interval['X.1']<nh_threshold_x_max) & (nh_rec_interval['X.1']>nh_threshold_x_min))
+        mask_nh.extend(mask_selected_nh)
+        size_nh +=len(mask_selected_nh)
+
+        median_initial_tw= tw_rec_interval['X.1'].median()
+        std_without_glass_event_tw = tw_selected_without_glass_event_interval['X.1'].std()
+        tw_threshold_x_min= median_initial_tw - max(0.02, std_without_glass_event_tw)
+        tw_threshold_x_max= median_initial_tw + max(0.02, std_without_glass_event_tw)
+
+        mask_selected_tw = (tw_rec_interval['X.1']<tw_threshold_x_max) & (tw_rec_interval['X.1']>tw_threshold_x_min)
+        mask_tw.extend(mask_selected_tw)
+    return np.array(mask_nh), np.array(mask_tw)
+
+#subject 19 had a very define shift between the beginning and the end of the task in term of z axis, then we treat it separately
+def remove_extreme_using_z_pos2_sub19(nh_rec, tw_rec): 
+    """Create a mask keeping all points which are between two extreme values"""
+    part1_nh = nh_rec[nh_rec['Time (Seconds)']<600*120]
+    part1_tw = tw_rec[tw_rec['Time (Seconds)']<600*120]
+    part2_nh = nh_rec[nh_rec['Time (Seconds)']>600*120]
+    part2_tw = tw_rec[tw_rec['Time (Seconds)']>600*120]
+
+    median_nh_part1 = part1_nh['Z.1'].median()
+    median_tw_part1 = part1_tw['Z.1'].median()
+    median_nh_part2 = part2_nh['Z.1'].median()
+    median_tw_part2 = part2_tw['Z.1'].median()
+
+    std_nh_part1 = part1_nh['Z.1'].std()
+    std_tw_part1 = part1_tw['Z.1'].std()
+    std_nh_part2 = part2_nh['Z.1'].std()
+    std_tw_part2 = part2_tw['Z.1'].std()
+
+    #A deviation from the main task (median) of 0.02m is considered as reasonable
+    nh_threshold_z_min_part1= median_nh_part1 - max(0.02, std_nh_part1)
+    nh_threshold_z_min_part2= median_nh_part2 - max(0.02, std_nh_part2)
+    nh_threshold_z_max_part1= median_nh_part1 + max(0.02, std_nh_part1)
+    nh_threshold_z_max_part2= median_nh_part2 + max(0.02, std_nh_part2)
+    tw_threshold_z_min_part1= median_tw_part1 - max(0.02, std_tw_part1)
+    tw_threshold_z_min_part2= median_tw_part2 - max(0.02, std_tw_part2)
+    tw_threshold_z_max_part1= median_tw_part1 + max(0.02, std_tw_part1)
+    tw_threshold_z_max_part2= median_tw_part2 + max(0.02, std_tw_part2)
+
+    mask_selected_nh_part1 = (nh_rec['Z.1']<nh_threshold_z_max_part1) & (nh_rec['Z.1']>nh_threshold_z_min_part1)
+    mask_selected_nh_part2 = (nh_rec['Z.1']<nh_threshold_z_max_part2) & (nh_rec['Z.1']>nh_threshold_z_min_part2)
+    mask_selected_tw_part1 = (tw_rec['Z.1']<tw_threshold_z_max_part1) & (tw_rec['Z.1']>tw_threshold_z_min_part1)
+    mask_selected_tw_part2 = (tw_rec['Z.1']<tw_threshold_z_max_part2) & (tw_rec['Z.1']>tw_threshold_z_min_part2)
+
+    mask_selected_nh = pd.concat([mask_selected_nh_part1, mask_selected_nh_part2], axis=0, ignore_index=True)
+    mask_selected_tw = pd.concat([mask_selected_tw_part1, mask_selected_tw_part2], axis=0, ignore_index=True)
+    return mask_selected_nh, mask_selected_tw
