@@ -4,6 +4,7 @@ __pycache__/
 
 #ignore Data
 Data/
+Old
 Data_Loss
 Step1_Auto_position_plots
 Annotations_final.csv
