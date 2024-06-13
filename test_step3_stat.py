@@ -79,7 +79,7 @@ def statistics_and_plots(grouped_data, metric_name, metric_quantity, tool_name):
     axis = sns_box_plot(grouped_data)
     
     # Calculate the mean values and plot it
-    mean_values = [np.mean(group) for group in grouped_data]
+    mean_values = [np.nanmean(group) for group in grouped_data] #nanmean instead of mean
     axis.plot([0, 1], [mean_values[0], mean_values[1]], linewidth=0.75, color='coral')
     #axis.plot([1, 2], [mean_values[1], mean_values[2]], linewidth=0.75, color='coral')
 
@@ -162,11 +162,15 @@ def get_metrc_name_quantity(metric_id):
     elif (metric_id == 9):
         return "Angular displacement", f"$ [?????] $"  
     elif (metric_id == 10):
-        return "Rate of orientation change ", f"$ [?????] $" 
+        return "Rate of orientation change ", f"$ [?????] $"
+    elif (metric_id == 11):
+        return "Bimanual dexterity ", f"$ [-] $" 
+    elif (metric_id == 12):
+        return "Bimanual efficacy", f"$ [-] $" 
 
     
 # tools, samples, metrics
-METRICS  = 11
+METRICS  = 13
 expert = np.empty((2, 8*6, METRICS))
 novice = np.empty((2, 8*6, METRICS))
 expert_subjects = 0
@@ -174,7 +178,6 @@ intermediate_subjects = 0
 novice_subjects = 0
 
 target_subjects = [1,19, 23,7, 24, 26, 10, 13, 16, 17, 20, 27]
-
 for subject in target_subjects:
     metrics = np.load(f"Features/S_{subject}/ot_metrics.npy")
     if (determine_expertise(get_expertise(subject)) == GROUPS_NAMES[0]):
@@ -189,7 +192,7 @@ for subject in target_subjects:
 FIG_SIZE = (5, 4)
 tools = ["The Tweezers", "Needle Holder"] 
 for tool in tools:
-    for metric in range(11):
+    for metric in range(11,METRICS): 
         if (tool == tools[0]):
             grouped_data = [expert[0, :, metric], novice[0, :, metric]]
         elif (tool == tools[1]):
