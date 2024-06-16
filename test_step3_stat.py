@@ -36,7 +36,8 @@ def test_normality(data):
     else: return (False, )
 
 def statistical_test(data):
-    res = ranksums(data[0], data[1]) # Mann-Whitney U Test
+    #res = ranksums(data[0], data[1]) # Mann-Whitney U Test
+    res = ranksums(data[0], data[1], nan_policy = 'omit') #try with omit Nan policy
     stat = res.statistic
     p_value = res.pvalue
     df = len(data[0]) + len(data[1]) - 2
@@ -84,7 +85,7 @@ def statistics_and_plots(grouped_data, metric_name, metric_quantity, tool_name):
     #axis.plot([1, 2], [mean_values[1], mean_values[2]], linewidth=0.75, color='coral')
 
     axis.set_title(f"{tool_name}")
-    xtick_labels = [f"{name} (n={len(data)})" for name, data in zip(modified_group_names, grouped_data)]
+    xtick_labels = [f"{name} (n={len(data)-np.sum(np.isnan(data))})" for name, data in zip(modified_group_names, grouped_data)] #remove the sample that were omitted because metric value = nan
     axis.set_xticklabels(xtick_labels)
     axis.set_xlabel(f"Groups", fontsize=12) 
     axis.set_ylabel(f"{metric_name} {metric_quantity}", fontsize=12) 
@@ -192,7 +193,7 @@ for subject in target_subjects:
 FIG_SIZE = (5, 4)
 tools = ["The Tweezers", "Needle Holder"] 
 for tool in tools:
-    for metric in range(11,METRICS): 
+    for metric in range(METRICS): 
         if (tool == tools[0]):
             grouped_data = [expert[0, :, metric], novice[0, :, metric]]
         elif (tool == tools[1]):
