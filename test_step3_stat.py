@@ -161,17 +161,13 @@ def get_metrc_name_quantity(metric_id):
     elif (metric_id == 8):
         return "Curvature standard deviation ", f"$ [?????] $"
     elif (metric_id == 9):
-        return "Angular displacement", f"$ [?????] $"  
-    elif (metric_id == 10):
-        return "Rate of orientation change ", f"$ [?????] $"
-    elif (metric_id == 11):
         return "Bimanual dexterity ", f"$ [-] $" 
-    elif (metric_id == 12):
+    elif (metric_id == 10):
         return "Bimanual efficacy", f"$ [-] $" 
 
     
 # tools, samples, metrics
-METRICS  = 13
+METRICS  = 11
 expert = np.empty((2, 8*6, METRICS))
 novice = np.empty((2, 8*6, METRICS))
 expert_subjects = 0
