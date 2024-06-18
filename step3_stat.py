@@ -157,17 +157,20 @@ def get_metrc_name_quantity(metric_id):
     elif (metric_id == 6):
         return "Economy of Volume", f"$ [-] $"  
     elif (metric_id == 7):
-        return "Mean curvature ", f"$ [?????] $" 
-    elif (metric_id == 8):
-        return "Curvature standard deviation ", f"$ [?????] $"
-    elif (metric_id == 9):
         return "Bimanual dexterity ", f"$ [-] $" 
-    elif (metric_id == 10):
+    elif (metric_id == 8):
         return "Bimanual efficacy", f"$ [-] $" 
-
+    elif (metric_id == 9):
+        return 'Mean relative phase in x direction', f'$ [degree] $' 
+    elif (metric_id == 10):
+        return 'Relative phase std in x direction', f'$ [degree] $'
+    elif (metric_id == 11):
+        return 'Mean relative phase in y direction', f'$ [degree] $'
+    elif (metric_id == 12):
+        return 'Relative phase std in y direction', f'$ [degree] $'
     
 # tools, samples, metrics
-METRICS  = 11
+METRICS  = 13
 expert = np.empty((2, 8*6, METRICS))
 novice = np.empty((2, 8*6, METRICS))
 expert_subjects = 0
