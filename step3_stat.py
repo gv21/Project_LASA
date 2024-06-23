@@ -8,6 +8,9 @@ from scipy.stats import shapiro
 import statistics 
 import scipy.stats as stats
 
+import warnings
+warnings.filterwarnings('ignore')
+
 GROUPS_NAMES = ["E", "N"]
 
 def test_normality(data):
@@ -74,7 +77,7 @@ def statistics_and_plots(grouped_data, metric_name, metric_quantity, tool_name):
             modified_group_names[i] = GROUPS_NAMES[i]
 
     for i in range(len(grouped_data)):
-        print(f">> {GROUPS_NAMES[i]} - descriptive statistics (n = {len(grouped_data[i])}): {descriptive_statistics[i]}")
+        print(f">> {get_metrc_name_quantity(metric)[0]} - {GROUPS_NAMES[i]} - descriptive statistics (n = {len(grouped_data[i])}): {descriptive_statistics[i]}")
     print("-----")
 
     axis = sns_box_plot(grouped_data)
@@ -95,6 +98,7 @@ def statistics_and_plots(grouped_data, metric_name, metric_quantity, tool_name):
     # significant difference
     # return: (statistics, p_value, df)
     test_result_01 = statistical_test([grouped_data[0], grouped_data[1]])
+    print(f'{tool_name} - {get_metrc_name_quantity(metric)[0]} - p-value',test_result_01[1])
     #test_result_12 = statistical_test([grouped_data[1], grouped_data[2]])
     #test_result_02 = statistical_test([grouped_data[0], grouped_data[2]])
     print(f"+ Statistics test (E & N): {test_result_01}")
